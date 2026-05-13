@@ -4,16 +4,23 @@ import re
 import nltk
 import os
 
-# Download NLTK data (works better on Streamlit Cloud)
+# ====================== Force Install Packages (Safety) ======================
+import subprocess
+import sys
+subprocess.check_call([sys.executable, "-m", "pip", "install", "joblib", "scikit-learn", "nltk"])
+
+# ====================== NLTK Setup (Fixed for Cloud) ======================
 @st.cache_resource
-def download_nltk_data():
-    nltk.download('stopwords', quiet=True, download_dir='/root/nltk_data')
-    nltk.download('punkt', quiet=True, download_dir='/root/nltk_data')
-    nltk.download('wordnet', quiet=True, download_dir='/root/nltk_data')
+def setup_nltk():
+    # Use default NLTK data path (works better on Streamlit Cloud)
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt', quiet=True)
+    nltk.download('wordnet', quiet=True)
+    return True
 
-download_nltk_data()
+setup_nltk()
 
-# Load model and vectorizer
+# ====================== Load Model ======================
 @st.cache_resource
 def load_model():
     model = joblib.load('spam_model.pkl')
@@ -22,7 +29,7 @@ def load_model():
 
 model, vectorizer = load_model()
 
-# Preprocess function
+# ====================== Preprocess Function ======================
 stop_words = set(nltk.corpus.stopwords.words('english'))
 lemmatizer = nltk.stem.WordNetLemmatizer()
 
@@ -34,15 +41,15 @@ def preprocess(text):
     tokens = [lemmatizer.lemmatize(token) for token in tokens]
     return " ".join(tokens)
 
-# ====================== UI ======================
+# ====================== Streamlit UI ======================
 st.title("📧 Spam Email Detector")
 st.markdown("### Check if an email is **Spam** or **Ham**")
 
-email_text = st.text_area("Paste Email Text Here:", height=300)
+email_text = st.text_area("Paste the full email here:", height=300)
 
 if st.button("🔍 Analyze Email"):
     if email_text.strip() == "":
-        st.warning("Please enter email text!")
+        st.warning("⚠️ Please enter some email text!")
     else:
         cleaned = preprocess(email_text)
         vectorized = vectorizer.transform([cleaned])
@@ -53,7 +60,7 @@ if st.button("🔍 Analyze Email"):
         if prediction == "spam":
             st.error(f"🚨 **SPAM DETECTED!** ({prob[1]:.1%} confidence)")
         else:
-            st.success(f"✅ **Ham (Normal Email)** ({prob[0]:.1%} confidence)")
+            st.success(f"✅ **This is a Normal Email (Ham)** ({prob[0]:.1%} confidence)")
 
-        with st.expander("Debug: Preprocessed Text"):
+        with st.expander("Debug: See Preprocessed Text"):
             st.write(cleaned)
