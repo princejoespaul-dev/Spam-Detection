@@ -2,19 +2,17 @@ import streamlit as st
 import joblib
 import re
 import nltk
-import os
-
-# ====================== Force Install Packages (Safety) ======================
 import subprocess
 import sys
+
+# ====================== Force Install (Safety) ======================
 subprocess.check_call([sys.executable, "-m", "pip", "install", "joblib", "scikit-learn", "nltk"])
 
-# ====================== NLTK Setup (Fixed for Cloud) ======================
+# ====================== NLTK Setup (Fixed) ======================
 @st.cache_resource
 def setup_nltk():
-    # Use default NLTK data path (works better on Streamlit Cloud)
     nltk.download('stopwords', quiet=True)
-    nltk.download('punkt', quiet=True)
+    nltk.download('punkt_tab', quiet=True)   # ← This is the important one
     nltk.download('wordnet', quiet=True)
     return True
 
@@ -29,7 +27,7 @@ def load_model():
 
 model, vectorizer = load_model()
 
-# ====================== Preprocess Function ======================
+# ====================== Preprocess ======================
 stop_words = set(nltk.corpus.stopwords.words('english'))
 lemmatizer = nltk.stem.WordNetLemmatizer()
 
@@ -41,7 +39,7 @@ def preprocess(text):
     tokens = [lemmatizer.lemmatize(token) for token in tokens]
     return " ".join(tokens)
 
-# ====================== Streamlit UI ======================
+# ====================== UI ======================
 st.title("📧 Spam Email Detector")
 st.markdown("### Check if an email is **Spam** or **Ham**")
 
@@ -62,5 +60,5 @@ if st.button("🔍 Analyze Email"):
         else:
             st.success(f"✅ **This is a Normal Email (Ham)** ({prob[0]:.1%} confidence)")
 
-        with st.expander("Debug: See Preprocessed Text"):
+        with st.expander("Debug: Preprocessed Text"):
             st.write(cleaned)
